@@ -1,0 +1,272 @@
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consummah Wellbeing AI Coach</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        consummahPrimary: '#2E7D32',
+                        consummahAccent: '#66BB6A',
+                        consummahLight: '#F0FDF4',
+                        consummahDark: '#1B5E20',
+                        consummahBackground: '#E8F5E9',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://rsms.me/inter/inter.css');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #E8F5E9;
+        }
+        /* Custom scrollbar for the chat area */
+        .chat-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .chat-container::-webkit-scrollbar-track {
+            background: #E8F5E9;
+        }
+        .chat-container::-webkit-scrollbar-thumb {
+            background: #A5D6A7;
+            border-radius: 4px;
+        }
+        .chat-container::-webkit-scrollbar-thumb:hover {
+            background: #81C784;
+        }
+        /* Input and button styling */
+        #user-input {
+            transition: all 0.3s ease-in-out;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        #user-input:focus {
+            box-shadow: 0 0 0 4px rgba(102, 187, 106, 0.2);
+        }
+        /* Chat bubble animations */
+        .message-fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Loading dots animation */
+        .loading-dots span {
+            animation: dot-flicker 1.4s infinite ease-in-out both;
+        }
+        .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+        .loading-dots span:nth-child(3) { animation-delay: 0s; }
+        @keyframes dot-flicker {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1.0); }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+
+<div class="flex flex-col w-full max-w-2xl h-full md:h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden m-4">
+
+    <!-- Header -->
+    <header class="bg-consummahPrimary text-white p-6 flex flex-col items-center justify-center shadow-lg relative">
+        <div class="absolute inset-0 bg-consummahDark opacity-50"></div>
+        <div class="relative z-10 flex items-center space-x-4">
+            <div class="p-2 bg-white rounded-full shadow-md">
+                <img src="https://placehold.co/40x40/E8F5E9/2E7D32?text=Logo" alt="Consummah Logo" class="h-10 w-10 rounded-full">
+            </div>
+            <h1 class="text-3xl font-bold">Consummah AI Coach</h1>
+        </div>
+        <p class="relative z-10 mt-2 text-sm text-center opacity-90">Your personal guide for building healthy habits and wellbeing.</p>
+    </header>
+
+    <!-- Chat Container -->
+    <main id="chat-container" class="flex-grow p-6 overflow-y-auto space-y-6 chat-container bg-consummahLight">
+        <!-- Initial bot message will be inserted here by JavaScript -->
+    </main>
+
+    <!-- Input Form -->
+    <form id="chat-form" class="p-4 bg-white border-t-2 border-consummahPrimary">
+        <div class="flex items-center space-x-2">
+            <input type="text" id="user-input" class="flex-grow p-3 border-2 border-gray-300 rounded-full focus:outline-none focus:border-consummahAccent transition-all" placeholder="Ask for a Microstep or share your goals...">
+            <button type="submit" class="bg-consummahAccent text-white p-3 rounded-full shadow-lg hover:bg-consummahPrimary transition-colors flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                </svg>
+            </button>
+        </div>
+    </form>
+
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const chatForm = document.getElementById('chat-form');
+        const userInput = document.getElementById('user-input');
+        const chatContainer = document.getElementById('chat-container');
+
+        let chatHistory = [];
+        let isWaitingForResponse = false;
+
+        const AI_MODEL_NAME = "gemini-2.5-flash-preview-05-20";
+
+        // Function to create a chat message element
+        const createMessageElement = (text, sender) => {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('flex', 'message-fade-in', sender === 'user' ? 'justify-end' : 'justify-start');
+
+            const textDiv = document.createElement('div');
+            textDiv.classList.add('rounded-xl', 'p-4', 'max-w-[75%]', 'break-words', 'shadow-md');
+            textDiv.innerHTML = text;
+
+            if (sender === 'user') {
+                textDiv.classList.add('bg-consummahPrimary', 'text-white', 'rounded-br-none');
+            } else {
+                textDiv.classList.add('bg-white', 'text-consummahDark', 'rounded-bl-none');
+            }
+
+            messageDiv.appendChild(textDiv);
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            // Return the created element so we can reference it later
+            return messageDiv;
+        };
+        
+        // Creates a loading indicator
+        const createLoadingIndicator = () => {
+            const loadingDiv = document.createElement('div');
+            loadingDiv.classList.add('flex', 'justify-start', 'message-fade-in');
+            const loadingText = document.createElement('div');
+            loadingText.classList.add('bg-white', 'text-consummahDark', 'rounded-xl', 'p-4', 'max-w-[75%]', 'shadow-md', 'rounded-bl-none', 'loading-dots');
+            loadingText.innerHTML = '<span>.</span><span>.</span><span>.</span>';
+            loadingDiv.appendChild(loadingText);
+            chatContainer.appendChild(loadingDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            return loadingDiv;
+        };
+
+        // Display initial greeting from the AI coach
+        const showInitialGreeting = () => {
+            const initialPrompt = "Hello! I'm your Consummah Health Coach. My goal is to help you build healthy habits using science-backed Microsteps. What would you like to focus on today? We can talk about sleep, nutrition, movement, stress management, or connection.";
+            createMessageElement(initialPrompt, 'coach');
+            chatHistory.push({ role: 'model', parts: [{ text: initialPrompt }] });
+        };
+
+        // Function to fetch response from the API
+        const getApiResponse = async (prompt, retryCount = 0) => {
+            const payload = {
+                contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                generationConfig: {
+                    temperature: 0.7,
+                    topP: 0.95,
+                    topK: 40,
+                },
+            };
+            
+            // Add chat history to the payload for context
+            if (chatHistory.length > 0) {
+                payload.contents = [...chatHistory, ...payload.contents];
+            }
+
+            const apiKey = "AIzaSyD-QhhoTlyjYoVt4mDWu-zDTxUfxwhmVpQ";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODEL_NAME}:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    return result.candidates[0].content.parts[0].text;
+                } else {
+                    return "I'm sorry, I couldn't generate a response. Please try again.";
+                }
+
+            } catch (error) {
+                console.error('API call failed:', error);
+                const backoffDelay = Math.pow(2, retryCount) * 1000;
+                if (retryCount < 5) {
+                    console.log(`Retrying in ${backoffDelay}ms...`);
+                    await new Promise(resolve => setTimeout(resolve, backoffDelay));
+                    return getApiResponse(prompt, retryCount + 1);
+                } else {
+                    console.error('Max retries reached. API call failed.');
+                    return "I'm having trouble connecting right now. Please try again in a moment.";
+                }
+            }
+        };
+
+        // Handle form submission
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const userMessage = userInput.value.trim();
+
+            if (userMessage === '' || isWaitingForResponse) {
+                return;
+            }
+
+            // Display user message
+            createMessageElement(userMessage, 'user');
+            chatHistory.push({ role: 'user', parts: [{ text: userMessage }] });
+
+            // Clear input and show loading indicator
+            userInput.value = '';
+            isWaitingForResponse = true;
+            const loadingIndicator = createLoadingIndicator();
+            userInput.disabled = true;
+
+            const aiPrompt = `You are a friendly, empathetic, and knowledgeable personal behavior change coach from Consummah. Your goal is to help the user build healthy habits using science-backed, small, and actionable steps called "Microsteps". Focus on the 5 key behaviors: sleep, food (nutrition), movement, stress management, and connection. Engage in a collaborative dialogue, ask questions, and provide encouragement. Do not give medical advice. Keep your responses concise and focused on one or two Microsteps at a time. Precede your response with a single emoji that relates to the habit you are discussing (e.g., 😴 for sleep, 🍎 for food, 🏃‍♂️ for movement,🧘 for stress, and ❤️ for connection). The user's message is: "${userMessage}".`;
+            
+            try {
+                const aiResponse = await getApiResponse(aiPrompt);
+                
+                // Remove the loading indicator
+                if (loadingIndicator) {
+                    chatContainer.removeChild(loadingIndicator);
+                }
+                
+                createMessageElement(aiResponse, 'coach');
+                chatHistory.push({ role: 'model', parts: [{ text: aiResponse }] });
+
+            } catch (error) {
+                console.error('Failed to get AI response:', error);
+                // Remove the loading indicator on error
+                if (loadingIndicator) {
+                    chatContainer.removeChild(loadingIndicator);
+                }
+                createMessageElement("I'm sorry, I couldn't generate a response. Please try again.", 'coach');
+            } finally {
+                isWaitingForResponse = false;
+                userInput.disabled = false;
+                userInput.focus();
+            }
+        });
+
+        // Show the initial greeting
+        showInitialGreeting();
+    });
+</script>
+
+</body>
+</html>
