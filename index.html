@@ -194,7 +194,9 @@
 
         // Function to show the error modal
         const showErrorModal = (message) => {
-            errorMessage.textContent = message;
+            // Remove the specific prefix before displaying
+            const displayMessage = message.replace(/(NETWORK_ERROR:|API_ERROR:)\s*/, '');
+            errorMessage.textContent = displayMessage;
             errorModal.classList.remove('hidden');
         };
 
@@ -205,6 +207,8 @@
 
         // Display initial greeting from the AI coach
         const showInitialGreeting = () => {
+            // New console log to confirm this version is running
+            console.log("Error handling is now active!");
             const initialPrompt = "Hello! I'm your Consummah Health Coach. My goal is to help you build healthy habits using science-backed Microsteps. What would you like to focus on today? We can talk about sleep, nutrition, movement, stress management, or connection.";
             createMessageElement(initialPrompt, 'coach');
             chatHistory.push({ role: 'model', parts: [{ text: initialPrompt }] });
@@ -254,7 +258,8 @@
                     result.candidates[0].content.parts.length > 0) {
                     return result.candidates[0].content.parts[0].text;
                 } else {
-                    return "I'm sorry, I couldn't generate a response. The model returned no content.";
+                    // This is the key change: we now throw a specific error
+                    throw new Error("API_ERROR: I'm sorry, I couldn't generate a response. The model returned no content.");
                 }
 
             } catch (error) {
@@ -315,15 +320,9 @@
                 if (loadingIndicator) {
                     chatContainer.removeChild(loadingIndicator);
                 }
-
-                // Check for the specific error message from the getApiResponse function
-                if (error.message.startsWith("NETWORK_ERROR")) {
-                    showErrorModal(error.message.split('NETWORK_ERROR: ')[1]);
-                } else if (error.message.startsWith("API_ERROR")) {
-                    showErrorModal(error.message.split('API_ERROR: ')[1]);
-                } else {
-                    createMessageElement("I'm sorry, I couldn't generate a response. An unexpected error occurred.", 'coach');
-                }
+                
+                // Pass the error message to the modal directly.
+                showErrorModal(error.message);
             } finally {
                 isWaitingForResponse = false;
                 userInput.disabled = false;
