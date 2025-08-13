@@ -1,4 +1,4 @@
-
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -71,6 +71,28 @@
             0%, 80%, 100% { transform: scale(0); }
             40% { transform: scale(1.0); }
         }
+        /* Modal for error messages */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen">
@@ -82,7 +104,8 @@
         <div class="absolute inset-0 bg-consummahDark opacity-50"></div>
         <div class="relative z-10 flex items-center space-x-4">
             <div class="p-2 bg-white rounded-full shadow-md">
-                <img src="https://placehold.co/40x40/E8F5E9/2E7D32?text=Logo" alt="Consummah Logo" class="h-10 w-10 rounded-full">
+                <!-- Image source updated to a relative path -->
+                <img src="Consummah-Green-Circle-Favicon.png" alt="Consummah Logo" class="h-10 w-10 rounded-full">
             </div>
             <h1 class="text-3xl font-bold">Consummah AI Coach</h1>
         </div>
@@ -108,11 +131,25 @@
 
 </div>
 
+<!-- Error Modal -->
+<div id="error-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <h3 class="text-xl font-bold text-consummahDark mb-4">Error: AI Not Responding</h3>
+        <p id="error-message" class="text-gray-700 mb-6"></p>
+        <button id="close-modal" class="bg-consummahAccent text-white px-6 py-2 rounded-full hover:bg-consummahPrimary transition-colors">
+            Got It
+        </button>
+    </div>
+</div>
+
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const chatForm = document.getElementById('chat-form');
         const userInput = document.getElementById('user-input');
         const chatContainer = document.getElementById('chat-container');
+        const errorModal = document.getElementById('error-modal');
+        const errorMessage = document.getElementById('error-message');
+        const closeModalButton = document.getElementById('close-modal');
 
         let chatHistory = [];
         let isWaitingForResponse = false;
@@ -155,6 +192,17 @@
             return loadingDiv;
         };
 
+        // Function to show the error modal
+        const showErrorModal = (message) => {
+            errorMessage.textContent = message;
+            errorModal.classList.remove('hidden');
+        };
+
+        // Function to hide the error modal
+        closeModalButton.addEventListener('click', () => {
+            errorModal.classList.add('hidden');
+        });
+
         // Display initial greeting from the AI coach
         const showInitialGreeting = () => {
             const initialPrompt = "Hello! I'm your Consummah Health Coach. My goal is to help you build healthy habits using science-backed Microsteps. What would you like to focus on today? We can talk about sleep, nutrition, movement, stress management, or connection.";
@@ -178,7 +226,7 @@
                 payload.contents = [...chatHistory, ...payload.contents];
             }
 
-            const apiKey = "AIzaSyD-QhhoTlyjYoVt4mDWu-zDTxUfxwhmVpQ";
+            const apiKey = "";
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODEL_NAME}:generateContent?key=${apiKey}`;
 
             try {
@@ -205,6 +253,12 @@
 
             } catch (error) {
                 console.error('API call failed:', error);
+                
+                // Specific check for network errors common with file:// protocol
+                if (error instanceof TypeError && error.message.includes("Failed to fetch")) {
+                    throw new Error("NETWORK_ERROR: A network error occurred. This often happens when you run this page directly from a local file. Please try running it from a local web server or hosting it online.");
+                }
+
                 const backoffDelay = Math.pow(2, retryCount) * 1000;
                 if (retryCount < 5) {
                     console.log(`Retrying in ${backoffDelay}ms...`);
@@ -212,7 +266,7 @@
                     return getApiResponse(prompt, retryCount + 1);
                 } else {
                     console.error('Max retries reached. API call failed.');
-                    return "I'm having trouble connecting right now. Please try again in a moment.";
+                    throw new Error("API_ERROR: I'm having trouble connecting right now. Please try again in a moment.");
                 }
             }
         };
@@ -255,7 +309,13 @@
                 if (loadingIndicator) {
                     chatContainer.removeChild(loadingIndicator);
                 }
-                createMessageElement("I'm sorry, I couldn't generate a response. Please try again.", 'coach');
+
+                // Check for the specific error message from the getApiResponse function
+                if (error.message.startsWith("NETWORK_ERROR")) {
+                    showErrorModal(error.message.split('NETWORK_ERROR: ')[1]);
+                } else {
+                    createMessageElement("I'm sorry, I couldn't generate a response. Please try again.", 'coach');
+                }
             } finally {
                 isWaitingForResponse = false;
                 userInput.disabled = false;
