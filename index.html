@@ -238,8 +238,14 @@
                     body: JSON.stringify(payload),
                 });
 
+                // Check for specific API error messages
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    const errorData = await response.json();
+                    let errorDetail = "An unknown API error occurred.";
+                    if (errorData && errorData.error && errorData.error.message) {
+                        errorDetail = errorData.error.message;
+                    }
+                    throw new Error(`API_ERROR: ${errorDetail}`);
                 }
 
                 const result = await response.json();
@@ -248,7 +254,7 @@
                     result.candidates[0].content.parts.length > 0) {
                     return result.candidates[0].content.parts[0].text;
                 } else {
-                    return "I'm sorry, I couldn't generate a response. Please try again.";
+                    return "I'm sorry, I couldn't generate a response. The model returned no content.";
                 }
 
             } catch (error) {
@@ -313,8 +319,10 @@
                 // Check for the specific error message from the getApiResponse function
                 if (error.message.startsWith("NETWORK_ERROR")) {
                     showErrorModal(error.message.split('NETWORK_ERROR: ')[1]);
+                } else if (error.message.startsWith("API_ERROR")) {
+                    showErrorModal(error.message.split('API_ERROR: ')[1]);
                 } else {
-                    createMessageElement("I'm sorry, I couldn't generate a response. Please try again.", 'coach');
+                    createMessageElement("I'm sorry, I couldn't generate a response. An unexpected error occurred.", 'coach');
                 }
             } finally {
                 isWaitingForResponse = false;
