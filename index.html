@@ -207,7 +207,6 @@
 
         // Display initial greeting from the AI coach
         const showInitialGreeting = () => {
-            // New console log to confirm this version is running
             console.log("Error handling is now active!");
             const initialPrompt = "Hello! I'm your Consummah Health Coach. My goal is to help you build healthy habits using science-backed Microsteps. What would you like to focus on today? We can talk about sleep, nutrition, movement, stress management, or connection.";
             createMessageElement(initialPrompt, 'coach');
@@ -230,8 +229,8 @@
                 payload.contents = [...chatHistory, ...payload.contents];
             }
 
-            const apiKey = "AIzaSyD-QhhoTlyjYoVt4mDWu-zDTxUfxwhmVpQ";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODEL_NAME}:generateContent?key=${apiKey}`;
+            // The API key is no longer needed here. The Canvas environment securely handles it.
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODEL_NAME}:generateContent`;
 
             try {
                 const response = await fetch(apiUrl, {
