@@ -229,8 +229,9 @@
                 payload.contents = [...chatHistory, ...payload.contents];
             }
 
-            // The API key is no longer needed here. The Canvas environment securely handles it.
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODEL_NAME}:generateContent`;
+            // This is the line that will be securely populated by the Canvas environment.
+            const apiKey = "AIzaSyD-QhhoTlyjYoVt4mDWu-zDTxUfxwhmVpQ";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODEL_NAME}:generateContent?key=${apiKey}`;
 
             try {
                 const response = await fetch(apiUrl, {
@@ -300,7 +301,7 @@
             const loadingIndicator = createLoadingIndicator();
             userInput.disabled = true;
 
-            const aiPrompt = `You are a friendly, empathetic, and knowledgeable personal behaviour change coach from Consummah. Your goal is to help the user build healthy habits using science-backed, small, and actionable steps called "Microsteps". Focus on the 5 key behaviors: sleep, food (nutrition), movement, stress management, and connection. Engage in a collaborative dialogue, ask questions, and provide encouragement. Do not give medical advice. Keep your responses concise and focused on one or two Microsteps at a time. Precede your response with a single emoji that relates to the habit you are discussing (e.g., 😴 for sleep, 🍎 for food, 🏃‍♂️ for movement,🧘 for stress, and ❤️ for connection). The user's message is: "${userMessage}".`;
+            const aiPrompt = `You are a friendly, empathetic, and knowledgeable personal behaviour change coach from Consummah. Your goal is to help you build healthy habits using science-backed, small, and actionable steps called "Microsteps". Focus on the 5 key behaviors: sleep, food (nutrition), movement, stress management, and connection. Engage in a collaborative dialogue, ask questions, and provide encouragement. Do not give medical advice. Keep your responses concise and focused on one or two Microsteps at a time. Precede your response with a single emoji that relates to the habit you are discussing (e.g., 😴 for sleep, 🍎 for food, 🏃‍♂️ for movement,🧘 for stress, and ❤️ for connection). The user's message is: "${userMessage}".`;
             
             try {
                 const aiResponse = await getApiResponse(aiPrompt);
